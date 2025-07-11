@@ -6,7 +6,7 @@ from datetime import date
 from sklearn.cluster import DBSCAN
 # Config
 frame_step = 1
-fire_imgs_folder = r"U:\Dissertation\Data\My First Project.v1i.yolov8\train\images"
+fire_imgs_folder = r"U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire"
 # U:\Dissertation\Data\My First Project.v1i.yolov8\train\images - Aditya anotated training images of fire
 # U:\Dissertation\Data\Binary\Binary\Unimodal\thermal_modality\train\Fire - THERMAL UNIMODAL
 # U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire     - RGB UNIMODAL
@@ -16,9 +16,9 @@ os.makedirs(detection_folder, exist_ok=True)
 os.makedirs(original_imgs_folder, exist_ok=True)
 
 # Detection parameters
-alpha = 1.8
-beta = 20
-R_thresh = 120
+alpha = 0.5
+beta =40
+R_thresh = 50
 B_thresh = 230
 contour_area = 400
 
@@ -78,46 +78,54 @@ for frame_count, image_file in enumerate(image_files):
     #         continue
     #     x, y, w, h = cv2.boundingRect(contour)
     #     frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-    boxes = []
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        if area < contour_area:
-            continue
-        x, y, w, h = cv2.boundingRect(contour)
-        boxes.append((x, y, w, h))
-        frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)  # green box
+    # boxes = []
+    # for contour in contours:
+    #     area = cv2.contourArea(contour)
+    #     if area < contour_area:
+    #         continue
+    #     x, y, w, h = cv2.boundingRect(contour)
+    #     boxes.append((x, y, w, h))
+    #     frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)  # green box
 
-    if boxes:
-        # 1. Find the centers of each box
-        centers = np.array([[x + w / 2, y + h / 2] for x, y, w, h in boxes])
+    # if boxes:
+    #     # 1. Find the centers of each box
+    #     centers = np.array([[x + w / 2, y + h / 2] for x, y, w, h in boxes])
 
-        # 2. Apply clustering (tweak eps as needed!)
-        clustering = DBSCAN(eps=100, min_samples=1).fit(centers)
+    #     # 2. Apply clustering (tweak eps as needed!)
+    #     clustering = DBSCAN(eps=100, min_samples=1).fit(centers)
 
-        # 3. Group boxes by cluster
-        for cluster_id in set(clustering.labels_):
-            cluster_boxes = [boxes[i] for i in range(len(boxes)) if clustering.labels_[i] == cluster_id]
+    #     # 3. Group boxes by cluster
+    #     for cluster_id in set(clustering.labels_):
+    #         cluster_boxes = [boxes[i] for i in range(len(boxes)) if clustering.labels_[i] == cluster_id]
 
-            # 4. Merge boxes within each cluster
-            xs = [x for x, y, w, h in cluster_boxes]
-            ys = [y for x, y, w, h in cluster_boxes]
-            x2s = [x + w for x, y, w, h in cluster_boxes]
-            y2s = [y + h for x, y, w, h in cluster_boxes]
+    #         # 4. Merge boxes within each cluster
+    #         xs = [x for x, y, w, h in cluster_boxes]
+    #         ys = [y for x, y, w, h in cluster_boxes]
+    #         x2s = [x + w for x, y, w, h in cluster_boxes]
+    #         y2s = [y + h for x, y, w, h in cluster_boxes]
 
-            x_min, y_min = min(xs), min(ys)
-            x_max, y_max = max(x2s), max(y2s)
+    #         x_min, y_min = min(xs), min(ys)
+    #         x_max, y_max = max(x2s), max(y2s)
 
-            # 5. Draw one red box per cluster
-            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
+    #         # 5. Draw one red box per cluster
+            #   cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
+
+    # Segmentation Attempt
+    # Optional: Create a color overlay from the binary mask
+    colored_mask = np.zeros_like(frame)
+    colored_mask[D_result > 0] = [0, 0, 255]  # Red segmented regions
+
+    # Overlay on original
+    segmentation_overlay = cv2.addWeighted(original_frame, 0.7, colored_mask, 0.3, 0)
 
         
     # Save outputs
     impath = os.path.join(original_imgs_folder, f"Test{frame_count}.png")
     det_path = os.path.join(detection_folder, f"Test{frame_count}.png")
     cv2.imwrite(impath, original_frame)
-    cv2.imwrite(det_path, frame)
+    cv2.imwrite(det_path, segmentation_overlay)
 
-    cv2.imshow("Detections", frame)
+    cv2.imshow("Detections", segmentation_overlay)
     cv2.imshow("Original", original_frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
