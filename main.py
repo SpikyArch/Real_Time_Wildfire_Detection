@@ -6,7 +6,7 @@ from datetime import date
 from sklearn.cluster import DBSCAN
 # Config
 frame_step = 1
-fire_imgs_folder = r"U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire"
+fire_imgs_folder = r"U:\Dissertation\Data\My First Project.v1i.yolov8\train\images"
 # U:\Dissertation\Data\My First Project.v1i.yolov8\train\images - Aditya anotated training images of fire
 # U:\Dissertation\Data\Binary\Binary\Unimodal\thermal_modality\train\Fire - THERMAL UNIMODAL
 # U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire     - RGB UNIMODAL
