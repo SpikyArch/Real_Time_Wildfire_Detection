@@ -6,7 +6,7 @@ from datetime import date
 from sklearn.cluster import DBSCAN
 # Config
 frame_step = 1
-fire_imgs_folder = r"U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire"
+fire_imgs_folder = r"U:\Dissertation\Data\My First Project.v1i.yolov8\train\images"
 # U:\Dissertation\Data\My First Project.v1i.yolov8\train\images - Aditya anotated training images of fire
 # U:\Dissertation\Data\Binary\Binary\Unimodal\thermal_modality\train\Fire - THERMAL UNIMODAL
 # U:\Dissertation\Data\Binary\Binary\Unimodal\rgb_modality\train\Fire     - RGB UNIMODAL
@@ -20,7 +20,7 @@ alpha = 0.5
 beta =40
 R_thresh = 50
 B_thresh = 230
-contour_area = 400
+contour_area = 350
 
 # Get all image files
 image_files = sorted([
@@ -70,54 +70,31 @@ for frame_count, image_file in enumerate(image_files):
     final_result = cv2.bitwise_and(frame, frame, mask=D_result)
 
     contours, _ = cv2.findContours(D_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    # areas = []
-    # for contour in contours:
-    #     area = cv2.contourArea(contour)
-    #     if area < contour_area:
-    #         areas.append(area) # This was saving the rejected areas which you were then getting the centroid of  
-    #         continue
-    #     x, y, w, h = cv2.boundingRect(contour)
-    #     frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-    # boxes = []
-    # for contour in contours:
-    #     area = cv2.contourArea(contour)
-    #     if area < contour_area:
-    #         continue
-    #     x, y, w, h = cv2.boundingRect(contour)
-    #     boxes.append((x, y, w, h))
-    #     frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)  # green box
-
-    # if boxes:
-    #     # 1. Find the centers of each box
-    #     centers = np.array([[x + w / 2, y + h / 2] for x, y, w, h in boxes])
-
-    #     # 2. Apply clustering (tweak eps as needed!)
-    #     clustering = DBSCAN(eps=100, min_samples=1).fit(centers)
-
-    #     # 3. Group boxes by cluster
-    #     for cluster_id in set(clustering.labels_):
-    #         cluster_boxes = [boxes[i] for i in range(len(boxes)) if clustering.labels_[i] == cluster_id]
-
-    #         # 4. Merge boxes within each cluster
-    #         xs = [x for x, y, w, h in cluster_boxes]
-    #         ys = [y for x, y, w, h in cluster_boxes]
-    #         x2s = [x + w for x, y, w, h in cluster_boxes]
-    #         y2s = [y + h for x, y, w, h in cluster_boxes]
-
-    #         x_min, y_min = min(xs), min(ys)
-    #         x_max, y_max = max(x2s), max(y2s)
-
-    #         # 5. Draw one red box per cluster
-            #   cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
 
     # Segmentation Attempt
-    # Optional: Create a color overlay from the binary mask
+    # Create a color overlay from the binary mask
+    # --- Fill fire regions (enclose all touching fire pixels) ---
+    # Make sure mask is binary and uint8
+    mask = D_result.copy()
+
+    # Find contours of connected fire regions
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Create an empty mask and fill each contour
+    filled_mask = np.zeros_like(mask)
+    for cnt in contours:
+        if cv2.contourArea(cnt) > contour_area:  # Skip small specks
+            cv2.drawContours(filled_mask, [cnt], -1, 255, thickness=cv2.FILLED)
+
+    # Optional: smooth the boundary
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    filled_mask = cv2.dilate(filled_mask, kernel, iterations=1)
+
+    # Create the red overlay
     colored_mask = np.zeros_like(frame)
-    colored_mask[D_result > 0] = [0, 0, 255]  # Red segmented regions
-
-    # Overlay on original
+    colored_mask[filled_mask > 0] = [0, 0, 255]
+    cv2.imshow("coloured mask",colored_mask)
     segmentation_overlay = cv2.addWeighted(original_frame, 0.7, colored_mask, 0.3, 0)
-
         
     # Save outputs
     impath = os.path.join(original_imgs_folder, f"Test{frame_count}.png")
