@@ -94,6 +94,8 @@ for frame_count, image_file in enumerate(image_files):
         # 2. Apply clustering (tweak eps as needed!)
         clustering = DBSCAN(eps=100, min_samples=1).fit(centers)
 
+        cluster_centroids = []
+
         # 3. Group boxes by cluster
         for cluster_id in set(clustering.labels_):
             cluster_boxes = [boxes[i] for i in range(len(boxes)) if clustering.labels_[i] == cluster_id]
@@ -110,7 +112,18 @@ for frame_count, image_file in enumerate(image_files):
             # 5. Draw one red box per cluster
             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
 
-        
+            # Collect cluster centroid for final centroid of centroids
+            cluster_centroids.append(((x_min + x_max) / 2, (y_min + y_max) / 2))
+
+        # 6. Draw centroid of centroids if available
+        if cluster_centroids:
+            centroid_array = np.array(cluster_centroids)
+            cx, cy = np.mean(centroid_array[:, 0]), np.mean(centroid_array[:, 1])
+            w, h = 30, 30
+            top_left = (int(cx - w // 2), int(cy - h // 2))
+            bottom_right = (int(cx + w // 2), int(cy + h // 2))
+            cv2.rectangle(frame, top_left, bottom_right, (255, 0, 255), 2)  # purple box
+
     # Save outputs
     impath = os.path.join(original_imgs_folder, f"Test{frame_count}.png")
     det_path = os.path.join(detection_folder, f"Test{frame_count}.png")
