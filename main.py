@@ -21,7 +21,7 @@ alpha = 0.5
 beta =40
 R_thresh = 50
 B_thresh = 230
-contour_area = 350
+contour_area = 250
 
 # Get all image files
 image_files = sorted([
