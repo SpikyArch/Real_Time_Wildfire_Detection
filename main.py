@@ -18,10 +18,10 @@ os.makedirs(original_imgs_folder, exist_ok=True)
 
 # Detection parameters
 alpha = 0.5
-beta =40
-R_thresh = 50
-B_thresh = 230
-contour_area = 250
+beta = 20
+R_thresh = 70
+B_thresh = 200
+contour_area = 450
 
 # Get all image files
 image_files = sorted([
@@ -96,7 +96,19 @@ for frame_count, image_file in enumerate(image_files):
     colored_mask[filled_mask > 0] = [0, 0, 255]
     cv2.imshow("coloured mask",colored_mask)
     segmentation_overlay = cv2.addWeighted(original_frame, 0.7, colored_mask, 0.3, 0)
-        
+
+    # --- Convex Hull from Fire Region Points ---
+    fire_points = np.column_stack(np.where(filled_mask > 0))
+    fire_points = fire_points[:, ::-1]  # Swap to (x, y)
+    if len(fire_points) > 2:
+        hull = cv2.convexHull(fire_points)
+        cv2.polylines(segmentation_overlay, [hull], isClosed=True, color=(255, 255, 0), thickness=2)  # Yellow hull
+        # Create transparent overlay and blend
+        hull_overlay = np.zeros_like(segmentation_overlay)
+        cv2.fillConvexPoly(hull_overlay, hull, (255, 255, 0))  # Yellow fill
+        segmentation_overlay = cv2.addWeighted(segmentation_overlay, 0.7, hull_overlay, 0.3, 0)
+
+
     # Save outputs
     impath = os.path.join(original_imgs_folder, f"Test{frame_count}.png")
     det_path = os.path.join(detection_folder, f"Test{frame_count}.png")

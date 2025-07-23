@@ -173,11 +173,11 @@ class ImageProcessor:
         # # Extracting the coefficients
         # _, (LH_fs, HL_fs, HH_fs) = pywt.wavedec2(D_fs_g, 'haar') # IF you want multilevel wavelet - need to use pywt.wavedec2 instead
         # _, (LH_o, HL_o, HH_o) = pywt.wavedec2(D_o_g, 'haar')
-        coeffs_fs = pywt.wavedec2(D_fs_g, 'bior3.3', level=5)
-        coeffs_o = pywt.wavedec2(D_o_g, 'bior3.3', level=5)
+        coeffs_fs = pywt.wavedec2(D_fs_g, 'db4', level=5)
+        coeffs_o = pywt.wavedec2(D_o_g, 'db4', level=5)
 
-        LH_fs, HL_fs, HH_fs = coeffs_fs[1]  # Level 5 details
-        LH_o, HL_o, HH_o = coeffs_o[1]
+        LH_fs, HL_fs, HH_fs = coeffs_fs[3]  # 0 - level 5 approximation
+        LH_o, HL_o, HH_o = coeffs_o[3]      # 1-5 levels 5-1 details
 
 
 
